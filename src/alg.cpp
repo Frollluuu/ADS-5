@@ -1,76 +1,123 @@
 // Copyright 2021 NNTU-CS
 #include <string>
-#include <map>
 #include "tstack.h"
 
-int priority(char op) {
-    if (op == '*' || op == '/') {
-        return 2;
-    } else if (op == '+' || op == '-') {
-        return 1;
-    } else {
-        return 0; // для скобок
-    }
-}
+TStack<char, 100> stack1;
+TStack<int, 100> stack2;
 
 std::string infx2pstfx(std::string inf) {
-    TStack<char, 100> stack;
-    std::string pst = "";
-    
-    for (char &c : inf) {
-        if (c == ' ') {
-            continue; // пропускаем пробелы
-        }
-
-        if (isdigit(c)) {
-            pst += c;
-        } else if (c == '(') {
-            stack.push(c);
-        } else if (c == ')') {
-            while (stack.get() != '(') {
-                pst += " ";
-                pst += stack.pop();
+    std::string exit;
+    for (char i : inf) {
+        if (i == '(') {
+            stack1.push(i);
+        } else if (i >= '0' && i <= '9') {
+            exit += i;
+            exit += ' ';
+        } else if (i == ')') {
+            while (stack1.get() != '(' && !stack1.isEmpty()) {
+                exit += stack1.pop();
+                exit += ' ';
             }
-            stack.pop();
-        } else {
-            pst += " ";
-            while (!stack.isEmpty() && priority(stack.get()) >= priority(c)) {
-                pst += stack.pop();
+            if (stack1.get() == '(')
+                stack1.pop();
+        } else if (i == '+' || i == '-') {
+            if (!stack1.isEmpty()) {
+                switch (stack1.get()) {
+                    case '*': {
+                        exit += '*';
+                        exit += ' ';
+                        stack1.pop();
+                        break;
+                    }
+                    case '/': {
+                        exit += '/';
+                        exit += ' ';
+                        stack1.pop();
+                        break;
+                    }
+                    case '+': {
+                        exit += '+';
+                        exit += ' ';
+                        stack1.pop();
+                        break;
+                    }
+                    case '-': {
+                        exit += '-';
+                        exit += ' ';
+                        stack1.pop();
+                        break;
+                    }
+                }
+                stack1.push(i);
+            } else {
+                stack1.push(i);
             }
-            stack.push(c);
+        } else if (i == '*' || i == '/') {
+            if (!stack1.isEmpty()) {
+                switch (stack1.get()) {
+                    case '*': {
+                        exit += '*';
+                        exit += ' ';
+                        stack1.pop();
+                        break;
+                    }
+                    case '/': {
+                        exit += '/';
+                        exit += ' ';
+                        stack1.pop();
+                        break;
+                    }
+                }
+                stack1.push(i);
+            } else {
+                stack1.push(i);
+            }
         }
     }
-    
-    while (!stack.isEmpty()) {
-        pst += " ";
-        pst += stack.pop();
+    if (!stack1.isEmpty()) {
+        while (!stack1.isEmpty()) {
+            exit += stack1.pop();
+            exit += ' ';
+        }
+        exit.pop_back();
     }
-    
-    return pst;
+    return exit;
 }
 
-int eval(std::string post) {
-    TStack<int, 100> stack;
-    std::istringstream ss(post);
-    std::string token;
-    
-    while (ss >> token) {
-        if (isdigit(token[0])) {
-            stack.push(std::stoi(token));
-        } else {
-            int b = stack.pop();
-            int a = stack.pop();
-            if (token == "+") {
-                stack.push(a + b);
-            } else if (token == "-") {
-                stack.push(a - b);
-            } else if (token == "*") {
-                stack.push(a * b);
-            } else if (token == "/") {
-                stack.push(a / b);
+int eval(std::string pref) {
+    std::string sTemp;
+    char cTemp;
+    for (char i : pref) {
+        if ((i >= '0' && i <= '9')) {
+            sTemp += i;
+
+        } else if (i == ' ' && !sTemp.empty()) {
+            stack2.push(std::stoi(sTemp));
+            sTemp.clear();
+        } else if (i == '+' || i == '-' || i == '*' || i == '/') {
+            switch (i) {
+                case '*': {
+                    cTemp = stack2.pop();
+                    stack2.push(stack2.pop() * cTemp);
+                    break;
+                }
+                case '/': {
+                    cTemp = stack2.pop();
+                    stack2.push(stack2.pop() / cTemp);
+                    break;
+                }
+                case '+': {
+                    cTemp = stack2.pop();
+                    stack2.push(stack2.pop() + cTemp);
+                    break;
+                }
+                case '-': {
+                    cTemp = stack2.pop();
+                    stack2.push(stack2.pop() - cTemp);
+                    break;
+                }
             }
         }
     }
-    
-    return stack.get();
+    return stack2.pop();
 }
